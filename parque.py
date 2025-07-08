@@ -1,15 +1,15 @@
 import threading
 import queue
 import time
-from recursos import Visitante  # Aquí importas Visitante desde recursos.py
+from recursos import Visitante  
 
 class Parque:
     def __init__(self):
         self.visitantes = []
         self.cola_juegos = queue.Queue()
         self.cola_banos = queue.Queue()
-        self.semaforo_juegos = threading.Semaphore(3)  # Ejemplo: 3 juegos simultáneos
-        self.semaforo_banos = threading.Semaphore(2)   # Ejemplo: 2 baños simultáneos
+        self.semaforo_juegos = threading.Semaphore(3)  
+        self.semaforo_banos = threading.Semaphore(2)  
 
     def crear_visitantes_interactivo(self):
         try:
@@ -57,5 +57,5 @@ class Parque:
 
     def simular_visita(self, visitante):
         print(f"{visitante.nombre} ingresó al parque pagando ${visitante.precio}.")
-        time.sleep(1)  # Simulación breve
+        time.sleep(1)  
         print(f"{visitante.nombre} salió del parque.")
