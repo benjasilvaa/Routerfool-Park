@@ -1,9 +1,13 @@
 from parque import Parque
 
-def main():
-    parque = Parque()
-    parque.crear_visitantes_interactivo()
-    parque.simular_visitantes()
-
 if __name__ == "__main__":
-    main()
+    parque = Parque()
+
+    print("Creando visitantes automáticos (sin mostrar)...")
+    parque.crear_visitantes_automaticos(15)
+
+    print("Creando visitantes manuales (se mostrarán movimientos)...")
+    parque.crear_visitantes_interactivo()
+
+    print("Simulando parque...")
+    parque.simular_parque()
