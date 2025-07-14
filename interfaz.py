@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import threading
 from parque import Parque
+from bd import BaseDatos  # Asegúrate que bd.py tiene esta clase
+from datetime import datetime
 
 class InterfazParque:
     def __init__(self, root):
@@ -9,9 +11,21 @@ class InterfazParque:
         self.root.title("Simulación del Parque")
         self.root.geometry("800x600")
 
+        # Conexión a la base de datos
+        self.bd = BaseDatos(host="localhost", user="tu_usuario", password="tu_contraseña", database="routerfool")
+
         self.parque = Parque()
         self.parque.set_callback_log(self.agregar_log)
         self.parque.set_callback_estado(self.actualizar_estado_colas)
+
+        # Insertar recursos en la BD
+        for recurso in self.parque.juegos + self.parque.banos:
+            recurso.id_bd = self.bd.insertar_recurso(
+                recurso.nombre,
+                recurso.tipo,
+                recurso.capacidad,
+                recurso.duracion
+            )
 
         self.texto_log = ScrolledText(root, wrap=tk.WORD, state="disabled", font=("Consolas", 10))
         self.texto_log.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -36,16 +50,37 @@ class InterfazParque:
 
     def crear_visitante(self):
         visitante = self.parque.crear_visitante_rapido()
-        self.agregar_log(f"Se creó el visitante {visitante.nombre}")
+        # Insertar en BD
+        visitante.id_bd = self.bd.insertar_visitante(
+            visitante.nombre,
+            visitante.tipo,
+            visitante.grupo_id,
+            automatico=0
+        )
+        self.agregar_log(f"Se creó el visitante {visitante.nombre} con ID BD {visitante.id_bd}")
 
     def crear_pack(self):
         pack = self.parque.crear_pack_familiar()
+        for visitante in pack:
+            visitante.id_bd = self.bd.insertar_visitante(
+                visitante.nombre,
+                visitante.tipo,
+                visitante.grupo_id,
+                automatico=0
+            )
         nombres = ", ".join(v.nombre for v in pack)
         self.agregar_log(f"Se creó un pack familiar con: {nombres}")
 
     def crear_automaticos(self):
         self.parque.crear_visitantes_automaticos(50)
-        self.agregar_log("Se crearon 20 visitantes automáticos.")
+        for visitante in self.parque.visitantes[-50:]:
+            visitante.id_bd = self.bd.insertar_visitante(
+                visitante.nombre,
+                visitante.tipo,
+                visitante.grupo_id,
+                automatico=1
+            )
+        self.agregar_log("Se crearon 50 visitantes automáticos.")
 
     def simular(self):
         threading.Thread(target=self.parque.simular_parque).start()
@@ -56,12 +91,20 @@ class InterfazParque:
         self.texto_log.config(state="disabled")
 
     def actualizar_estado_colas(self):
+        self.root.after(0, self._actualizar_estado_colas)
+
+    def _actualizar_estado_colas(self):
         texto_estado = "Estado actual de las colas:\n\n"
         for recurso in self.parque.juegos + self.parque.banos:
-            texto_estado += f"{recurso.nombre}: {recurso.cola_espera} en cola (capacidad: {recurso.capacidad})\n"
+            cantidad_cola = recurso.cola.qsize() if hasattr(recurso, 'cola') else recurso.cola_espera
+            texto_estado += f"{recurso.nombre}: {cantidad_cola} en cola (capacidad: {recurso.capacidad})\n"
         self.estado_label.config(text=texto_estado)
+
+    def cerrar_bd(self):
+        self.bd.cerrar()
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = InterfazParque(root)
+    root.protocol("WM_DELETE_WINDOW", lambda: (app.cerrar_bd(), root.destroy()))
     root.mainloop()

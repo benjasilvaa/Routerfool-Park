@@ -1,4 +1,5 @@
 import threading
+import queue
 import random
 import time
 from recursos import Visitante, Juego, Bano
@@ -26,6 +27,8 @@ class Parque:
 
         for recurso in self.juegos + self.banos:
             recurso.cola_espera = 0
+            recurso.cola = queue.Queue()
+            recurso.lock_cola = threading.Lock()
 
     def set_callback_log(self, callback):
         self.callback_log = callback
@@ -115,32 +118,46 @@ class Parque:
             self.imprimir(f"{nombres} {self.plural(subgrupo, 'intenta', 'intentan')} ingresar a {recurso.nombre} (capacidad {capacidad}) [subgrupo {idx}/{len(subgrupos)}]...", subgrupo[0].mostrar_logs)
             time.sleep(0.5)
 
+            with recurso.lock_cola:
+                for visitante in subgrupo:
+                    recurso.cola.put(visitante)
+                recurso.cola_espera += len(subgrupo)
+            if self.callback_estado:
+                self.callback_estado()
+
             esperando = False
             tiempo_espera = 0
             visitantes_en_espera = random.randint(1, 5)
 
             while True:
-                adquiridos = []
-                for _ in range(len(subgrupo)):
-                    if recurso.semaforo.acquire(blocking=False):
-                        adquiridos.append(True)
-                    else:
+                with recurso.lock_cola:
+                   
+                    cola_lista = list(recurso.cola.queue)
+                    primero_en_cola = all(
+                        cola_lista[i] == visitante for i, visitante in enumerate(subgrupo)
+                    ) if len(cola_lista) >= len(subgrupo) else False
+
+                if primero_en_cola:
+                    adquiridos = []
+                    for _ in range(len(subgrupo)):
+                        if recurso.semaforo.acquire(blocking=False):
+                            adquiridos.append(True)
+                        else:
+                            break
+
+                    if len(adquiridos) == len(subgrupo):
+                        with recurso.lock_cola:
+                            for _ in subgrupo:
+                                recurso.cola.get()
+                            recurso.cola_espera = max(0, recurso.cola_espera - len(subgrupo))
+                        if self.callback_estado:
+                            self.callback_estado()
                         break
 
-                if len(adquiridos) == len(subgrupo):
-                    recurso.cola_espera = max(0, recurso.cola_espera - len(subgrupo))
-                    if self.callback_estado:
-                        self.callback_estado()
-                    break
-
-                for _ in adquiridos:
-                    recurso.semaforo.release()
+                    for _ in adquiridos:
+                        recurso.semaforo.release()
 
                 if not esperando and tiempo_espera >= 0.5:
-                    recurso.cola_espera += len(subgrupo)
-                    if self.callback_estado:
-                        self.callback_estado()
-
                     self.imprimir(f"{nombres} {self.plural(subgrupo, 'espera')} para {recurso.nombre} porque no hay espacio suficiente.", subgrupo[0].mostrar_logs)
                     self.imprimir(f"Hay aproximadamente {visitantes_en_espera} personas delante en la cola de {recurso.nombre}.", subgrupo[0].mostrar_logs)
                     esperando = True
