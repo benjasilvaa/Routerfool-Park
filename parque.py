@@ -24,7 +24,6 @@ class Parque:
         self.callback_log = None
         self.callback_estado = None
 
-        # Inicializamos atributo cola_espera para contar visitantes esperando
         for recurso in self.juegos + self.banos:
             recurso.cola_espera = 0
 
