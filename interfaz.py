@@ -13,15 +13,12 @@ class InterfazParque:
         self.parque.set_callback_log(self.agregar_log)
         self.parque.set_callback_estado(self.actualizar_estado_colas)
 
-        # Área de logs
         self.texto_log = ScrolledText(root, wrap=tk.WORD, state="disabled", font=("Consolas", 10))
         self.texto_log.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # Estado colas
         self.estado_label = tk.Label(root, text="Estado actual de las colas:", justify=tk.LEFT, font=("Consolas", 10))
         self.estado_label.pack(fill=tk.X, padx=10)
 
-        # Botones
         frame_botones = tk.Frame(root)
         frame_botones.pack(pady=10)
 
