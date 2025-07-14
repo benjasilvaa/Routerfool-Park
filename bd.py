@@ -1,49 +1,42 @@
 import mysql.connector
-from mysql.connector import Error
 
-def obtener_conexion():
-    try:
-        conexion = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='',
-            database='routerfool'
-        )
-        return conexion
-    except Error as e:
-        print(f"Error al conectar a la base de datos: {e}")
-        return None
+# Conectarse a la base de datos
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",           # Cambialo si usás otro usuario
+    password="",           # Agregá contraseña si tu MySQL la tiene
+    database="routerfool"  # Asegurate de que la base ya existe
+)
 
-def insertar_visitante(visitante):
-    conexion = obtener_conexion()
-    if conexion:
-        cursor = conexion.cursor()
-        sql = "INSERT INTO visitantes (nombre, edad) VALUES (%s, %s)"
-        valores = (visitante.nombre, visitante.edad)
-        cursor.execute(sql, valores)
-        conexion.commit()
-        visitante.id = cursor.lastrowid
-        cursor.close()
-        conexion.close()
+cursor = conn.cursor()
 
-def insertar_log(visitante_id, recurso_tipo, recurso_id):
-    conexion = obtener_conexion()
-    if conexion:
-        cursor = conexion.cursor()
-        if recurso_tipo == "Juego":
-            tabla_log = "juegos_log"
-            columna_id_recurso = "id_juego"
-        elif recurso_tipo == "Bano":
-            tabla_log = "banos_log"
-            columna_id_recurso = "id_bano"
-        else:
-            cursor.close()
-            conexion.close()
-            return
+# Datos de recursos
+juegos = [
+    ("Montaña Rusa", "Juego", 3, 3),
+    ("Sillas Voladoras", "Juego", 2, 2),
+    ("Autos Chocadores", "Juego", 2, 4),
+    ("Casa del Terror", "Juego", 1, 5)
+]
 
-        sql = f"INSERT INTO {tabla_log} (id_visitante, {columna_id_recurso}) VALUES (%s, %s)"
-        valores = (visitante_id, recurso_id)
-        cursor.execute(sql, valores)
-        conexion.commit()
-        cursor.close()
-        conexion.close()
+banos = [
+    ("Baño Norte", "Baño", 2, 2),
+    ("Baño Sur", "Baño", 1, 3),
+    ("Baño Este", "Baño", 1, 4),
+    ("Baño Oeste", "Baño", 2, 2)
+]
+
+recursos = juegos + banos
+
+# Insertar en tabla recursos
+insert_query = """
+    INSERT INTO recursos (nombre, tipo, capacidad, duracion_segundos)
+    VALUES (%s, %s, %s, %s)
+"""
+cursor.executemany(insert_query, recursos)
+
+conn.commit()
+print("✅ Recursos insertados correctamente.")
+
+# Cerrar conexión
+cursor.close()
+conn.close()
