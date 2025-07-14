@@ -6,7 +6,7 @@ class Juego:
         self.capacidad = capacidad
         self.duracion = duracion_segundos
         self.semaforo = threading.Semaphore(capacidad)
-        self.cola = []  # 👈 Cola de espera visible
+        self.cola = []
         self.lock = threading.Lock()
 
 class Bano:
@@ -15,7 +15,7 @@ class Bano:
         self.capacidad = capacidad
         self.duracion = duracion_segundos
         self.semaforo = threading.Semaphore(capacidad)
-        self.cola = []  # 👈 Cola de espera visible
+        self.cola = []
         self.lock = threading.Lock()
 
 class Visitante:
