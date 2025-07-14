@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import threading
 from parque import Parque
-from bd import BaseDatos  # Asegúrate que bd.py tiene esta clase
+from bd import BaseDatos  # Asegúrate de que bd.py tiene esta clase para MySQL
+from recursos import Juego, Bano  # IMPORTA las clases Juego y Bano
 from datetime import datetime
 
 class InterfazParque:
@@ -11,8 +12,8 @@ class InterfazParque:
         self.root.title("Simulación del Parque")
         self.root.geometry("800x600")
 
-        # Conexión a la base de datos
-        self.bd = BaseDatos(host="localhost", user="tu_usuario", password="tu_contraseña", database="routerfool")
+        # Conexión a la base de datos MySQL (ajustado para MySQL)
+        self.bd = BaseDatos(host="localhost", user="root", password="tu_contraseña", database="routerfool")
 
         self.parque = Parque()
         self.parque.set_callback_log(self.agregar_log)
@@ -20,13 +21,15 @@ class InterfazParque:
 
         # Insertar recursos en la BD
         for recurso in self.parque.juegos + self.parque.banos:
+            tipo_recurso = "Juego" if isinstance(recurso, Juego) else "Baño"
             recurso.id_bd = self.bd.insertar_recurso(
                 recurso.nombre,
-                recurso.tipo,
+                tipo_recurso,  # Tipo calculado dinámicamente
                 recurso.capacidad,
                 recurso.duracion
             )
 
+        # Configuración de la interfaz
         self.texto_log = ScrolledText(root, wrap=tk.WORD, state="disabled", font=("Consolas", 10))
         self.texto_log.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
