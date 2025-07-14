@@ -64,7 +64,6 @@ class Parque:
         threads = []
         grupos = {}
 
-        # Lanzar todos los hilos simultáneamente sin sleep
         for visitante in self.visitantes:
             if visitante.grupo_id:
                 grupos.setdefault(visitante.grupo_id, []).append(visitante)
@@ -81,7 +80,6 @@ class Parque:
         for t in threads:
             t.join()
 
-        # Al final limpiar colas
         for recurso in self.juegos + self.banos:
             recurso.cola_espera = 0
         if self.callback_estado:
@@ -130,7 +128,7 @@ class Parque:
                         break
 
                 if len(adquiridos) == len(subgrupo):
-                    recurso.cola_espera = max(0, recurso.cola_espera - len(subgrupo))  # Reducir cola
+                    recurso.cola_espera = max(0, recurso.cola_espera - len(subgrupo))
                     if self.callback_estado:
                         self.callback_estado()
                     break
@@ -139,7 +137,7 @@ class Parque:
                     recurso.semaforo.release()
 
                 if not esperando and tiempo_espera >= 0.5:
-                    recurso.cola_espera += len(subgrupo)  # Incrementar cola
+                    recurso.cola_espera += len(subgrupo)
                     if self.callback_estado:
                         self.callback_estado()
 
